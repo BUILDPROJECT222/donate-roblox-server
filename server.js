@@ -7,6 +7,18 @@ app.use(express.json());
 // Queue donasi - simpan donasi yang belum di-fetch Roblox
 let donationQueue = [];
 
+// Leaderboard - akumulasi total donasi per roblox_username
+let leaderboard = {};
+
+function updateLeaderboard(donation) {
+  const username = donation.roblox_username;
+  if (!username) return;
+  if (!leaderboard[username]) {
+    leaderboard[username] = { roblox_username: username, name: donation.name, total: 0 };
+  }
+  leaderboard[username].total += donation.amount || 0;
+}
+
 // ============================================
 // WEBHOOK ENDPOINTS (terima donasi dari platform)
 // ============================================
@@ -23,6 +35,7 @@ app.post("/webhook/saweria", (req, res) => {
     timestamp: Date.now(),
   };
   donationQueue.push(donation);
+  updateLeaderboard(donation);
   console.log(`[Saweria] ${donation.name} (@${donation.roblox_username}) - Rp${donation.amount}: ${donation.message}`);
   res.status(200).json({ success: true });
 });
@@ -39,6 +52,7 @@ app.post("/webhook/sociabuzz", (req, res) => {
     timestamp: Date.now(),
   };
   donationQueue.push(donation);
+  updateLeaderboard(donation);
   console.log(`[Sociabuzz] ${donation.name} (@${donation.roblox_username}) - Rp${donation.amount}: ${donation.message}`);
   res.status(200).json({ success: true });
 });
@@ -55,6 +69,7 @@ app.post("/webhook/bagibagi", (req, res) => {
     timestamp: Date.now(),
   };
   donationQueue.push(donation);
+  updateLeaderboard(donation);
   console.log(`[Bagibagi] ${donation.name} (@${donation.roblox_username}) - Rp${donation.amount}: ${donation.message}`);
   res.status(200).json({ success: true });
 });
@@ -85,7 +100,41 @@ app.post("/test/donate", (req, res) => {
     message: message || "Test donasi!",
     timestamp: Date.now(),
   });
+  updateLeaderboard(donationQueue[donationQueue.length - 1]);
   res.json({ success: true, queue_size: donationQueue.length });
+});
+
+// Leaderboard endpoint - top 20 donatur
+app.get("/leaderboard", (req, res) => {
+  const sorted = Object.values(leaderboard)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 20)
+    .map((entry, i) => ({
+      rank: i + 1,
+      roblox_username: entry.roblox_username,
+      name: entry.name,
+      total: entry.total,
+    }));
+  res.json({ leaderboard: sorted });
+});
+
+// Manual set leaderboard (untuk import data awal)
+app.post("/leaderboard/set", (req, res) => {
+  const { entries } = req.body;
+  if (!entries || !Array.isArray(entries)) {
+    return res.status(400).json({ error: "entries array required" });
+  }
+  leaderboard = {};
+  for (const entry of entries) {
+    if (entry.roblox_username) {
+      leaderboard[entry.roblox_username] = {
+        roblox_username: entry.roblox_username,
+        name: entry.name || entry.roblox_username,
+        total: entry.total || 0,
+      };
+    }
+  }
+  res.json({ success: true, count: Object.keys(leaderboard).length });
 });
 
 // Health check
