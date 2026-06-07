@@ -17,12 +17,13 @@ app.post("/webhook/saweria", (req, res) => {
   const donation = {
     platform: "saweria",
     name: data.donator_name || data.name || "Anonim",
+    roblox_username: data.roblox_username || "",
     amount: data.amount || 0,
     message: data.message || "",
     timestamp: Date.now(),
   };
   donationQueue.push(donation);
-  console.log(`[Saweria] ${donation.name} - Rp${donation.amount}: ${donation.message}`);
+  console.log(`[Saweria] ${donation.name} (@${donation.roblox_username}) - Rp${donation.amount}: ${donation.message}`);
   res.status(200).json({ success: true });
 });
 
@@ -32,12 +33,13 @@ app.post("/webhook/sociabuzz", (req, res) => {
   const donation = {
     platform: "sociabuzz",
     name: data.fan_name || data.name || "Anonim",
+    roblox_username: data.roblox_username || "",
     amount: data.amount || data.total || 0,
     message: data.message || data.note || "",
     timestamp: Date.now(),
   };
   donationQueue.push(donation);
-  console.log(`[Sociabuzz] ${donation.name} - Rp${donation.amount}: ${donation.message}`);
+  console.log(`[Sociabuzz] ${donation.name} (@${donation.roblox_username}) - Rp${donation.amount}: ${donation.message}`);
   res.status(200).json({ success: true });
 });
 
@@ -47,12 +49,13 @@ app.post("/webhook/bagibagi", (req, res) => {
   const donation = {
     platform: "bagibagi",
     name: data.supporter_name || data.name || "Anonim",
+    roblox_username: data.roblox_username || "",
     amount: data.amount || 0,
     message: data.message || "",
     timestamp: Date.now(),
   };
   donationQueue.push(donation);
-  console.log(`[Bagibagi] ${donation.name} - Rp${donation.amount}: ${donation.message}`);
+  console.log(`[Bagibagi] ${donation.name} (@${donation.roblox_username}) - Rp${donation.amount}: ${donation.message}`);
   res.status(200).json({ success: true });
 });
 
@@ -73,10 +76,11 @@ app.get("/donations/latest", (req, res) => {
 // ============================================
 
 app.post("/test/donate", (req, res) => {
-  const { name, amount, message } = req.body;
+  const { name, roblox_username, amount, message } = req.body;
   donationQueue.push({
     platform: "test",
     name: name || "Tester",
+    roblox_username: roblox_username || "",
     amount: amount || 10000,
     message: message || "Test donasi!",
     timestamp: Date.now(),
